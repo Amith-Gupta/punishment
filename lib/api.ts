@@ -156,7 +156,24 @@ export const api = {
 
   ask: async (query: string, language: Lang, profileId: string): Promise<CopilotAnswer> => {
     try {
-      return await call<CopilotAnswer>("/copilot/query", json({ query, language, profile_id: profileId }), 5000);
+      const res = await call<any>("/copilot/query", json({ query, language, profile_id: profileId }), 5000);
+      if (res && res.answer) {
+        return {
+          answer: res.answer,
+          language: res.language || language,
+          citations: Array.isArray(res.citations)
+            ? res.citations.map((c: any, i: number) =>
+                typeof c === "string"
+                  ? { record_id: `rec-ref-${i}`, title: c, record_date: new Date().toISOString().slice(0, 10) }
+                  : { record_id: c.record_id || `rec-ref-${i}`, title: c.title || "Health Record", record_date: c.record_date || null }
+              )
+            : [],
+          disclaimer: res.disclaimer || "AI Health Copilot for informational reference only.",
+          safety: res.safety || "ok",
+          model: res.model || "gemini-1.5-flash",
+        };
+      }
+      return mockStore.ask(query, language, profileId);
     } catch {
       return mockStore.ask(query, language, profileId);
     }
