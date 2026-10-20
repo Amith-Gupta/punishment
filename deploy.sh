@@ -28,6 +28,10 @@ fi
 echo "[3/4] Preparing SSL directory structure..."
 mkdir -p certbot/conf certbot/www
 
+# Stop any native host webservers occupying port 80
+sudo systemctl stop apache2 nginx 2>/dev/null || true
+sudo systemctl disable apache2 nginx 2>/dev/null || true
+
 # 4. Build and start containers
 echo "[4/4] Building and launching application containers..."
 sudo docker compose down --remove-orphans || true
